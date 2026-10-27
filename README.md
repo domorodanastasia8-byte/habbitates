@@ -2,6 +2,8 @@
 
 Персональное мобильное PWA для 100-дневного бережного челленджа: ежедневные привычки, прогресс, вехи и личный дневник с облачным и локальным сохранением.
 
+Самостоятельная версия: [sto-dney-k-sebe.domorodanastasia8.workers.dev](https://sto-dney-k-sebe.domorodanastasia8.workers.dev/).
+
 Инструкция для самостоятельного размещения: [docs/cloudflare-deploy.md](docs/cloudflare-deploy.md).
 
 ## Техническая основа
