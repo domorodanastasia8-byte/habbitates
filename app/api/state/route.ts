@@ -19,7 +19,7 @@ export async function GET() {
 export async function PUT(request: Request) {
   const user = await getChatGPTUser();
   if (!user) return NextResponse.json({ error: "unauthorized" }, { status: 401 });
-  const body = await request.json();
+  const body = await request.json() as { state?: unknown; updatedAt?: unknown };
   if (!body?.state || typeof body.state !== "object") {
     return NextResponse.json({ error: "invalid_state" }, { status: 400 });
   }

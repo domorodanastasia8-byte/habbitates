@@ -1,4 +1,10 @@
-# vinext-starter
+# 100 дней к себе
+
+Персональное мобильное PWA для 100-дневного бережного челленджа: ежедневные привычки, прогресс, вехи и личный дневник с облачным и локальным сохранением.
+
+Инструкция для самостоятельного размещения: [docs/cloudflare-deploy.md](docs/cloudflare-deploy.md).
+
+## Техническая основа
 
 A clean full-stack starter running on [vinext](https://github.com/cloudflare/vinext), with optional Cloudflare D1 and Drizzle support.
 

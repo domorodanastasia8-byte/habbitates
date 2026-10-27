@@ -69,7 +69,7 @@ function loadLocal(): ChallengeState {
   } catch { return initialState(); }
 }
 
-export default function ChallengeApp({ cloudEnabled }: { cloudEnabled: boolean }) {
+export default function ChallengeApp({ cloudEnabled, standaloneAuth = false }: { cloudEnabled: boolean; standaloneAuth?: boolean }) {
   const [state, setState] = useState<ChallengeState | null>(null);
   const [tab, setTab] = useState<"today" | "calendar" | "journal" | "progress" | "settings">("today");
   const [selectedDate, setSelectedDate] = useState(iso());
@@ -88,8 +88,9 @@ export default function ChallengeApp({ cloudEnabled }: { cloudEnabled: boolean }
     if (!cloudEnabled) { setSync("offline"); return; }
     fetch("/api/state").then(async response => {
       if (!response.ok) throw new Error();
-      const data = await response.json();
-      if (data.state && data.updatedAt > local.updatedAt) {
+      const data = await response.json() as { state?: Partial<ChallengeState> | null; updatedAt?: number };
+      const remoteUpdatedAt = Number(data.updatedAt) || 0;
+      if (data.state && remoteUpdatedAt > local.updatedAt) {
         const normalized = normalizeState(data.state);
         setState(normalized); localStorage.setItem(STORAGE_KEY, JSON.stringify(normalized));
       }
@@ -228,7 +229,7 @@ export default function ChallengeApp({ cloudEnabled }: { cloudEnabled: boolean }
         {tab === "calendar" && <CalendarView state={state} page={calendarPage} setPage={setCalendarPage} today={today} chooseDate={chooseDate}/>} 
         {tab === "journal" && <JournalView state={state} selectedDate={selectedDate} setSelectedDate={setSelectedDate} setJournal={setJournal} today={today} setToast={setToast}/>} 
         {tab === "progress" && <ProgressView state={state} currentDay={currentDay}/>} 
-        {tab === "settings" && <SettingsView state={state} persist={persist} importedInput={importedInput} setToast={setToast}/>} 
+        {tab === "settings" && <SettingsView state={state} persist={persist} importedInput={importedInput} setToast={setToast} standaloneAuth={standaloneAuth}/>}
       </main>
 
       <nav className="bottom-nav" aria-label="Основная навигация">
@@ -368,7 +369,7 @@ function ProgressView({ state, currentDay }: { state: ChallengeState; currentDay
   </section>;
 }
 
-function SettingsView({ state, persist, importedInput, setToast }: { state: ChallengeState; persist: (s: ChallengeState) => void; importedInput: React.RefObject<HTMLInputElement | null>; setToast: (s: string) => void }) {
+function SettingsView({ state, persist, importedInput, setToast, standaloneAuth }: { state: ChallengeState; persist: (s: ChallengeState) => void; importedInput: React.RefObject<HTMLInputElement | null>; setToast: (s: string) => void; standaloneAuth: boolean }) {
   async function toggleReminder(enabled: boolean) {
     if (enabled && "Notification" in window && Notification.permission === "default") await Notification.requestPermission();
     persist({ ...state, reminder: { ...state.reminder, enabled } });
@@ -386,6 +387,7 @@ function SettingsView({ state, persist, importedInput, setToast }: { state: Chal
     <div className="settings-card"><div className="setting-row"><div className="setting-title"><span className="habit-icon"><Bell/></span><div><h2>Мягкое напоминание</h2><p>Браузерное уведомление, если к вечеру остались пункты.</p></div></div><label className="switch"><input type="checkbox" checked={state.reminder.enabled} onChange={e => toggleReminder(e.target.checked)}/><span/></label></div>{state.reminder.enabled && <div className="reminder-time"><label>Напомнить после</label><input type="time" value={state.reminder.time} onChange={e => persist({ ...state, reminder: { ...state.reminder, time: e.target.value } })}/><p><strong>Важно:</strong> это не серверный push. Уведомление сработает, пока приложение открыто или активно в фоне; iPhone может останавливать его. Для настоящих push нужен отдельный push‑сервис.</p></div>}</div>
     <div className="settings-card"><div className="setting-row"><div><h2>Резервная копия</h2><p>Скачай данные или перенеси их на другое устройство.</p></div></div><div className="backup-actions"><button onClick={exportData}><Download/>Экспорт</button><button onClick={() => importedInput.current?.click()}><Upload/>Импорт</button><input ref={importedInput} hidden type="file" accept="application/json" onChange={e => importData(e.target.files?.[0])}/></div></div>
     <div className="settings-card install-card"><Share2/><div><h2>Добавить на экран телефона</h2><p><b>iPhone:</b> Safari → «Поделиться» → «На экран Домой».<br/><b>Android:</b> Chrome → меню ⋮ → «Установить приложение».</p></div></div>
+    {standaloneAuth ? <div className="settings-card"><div className="setting-row"><div><h2>Безопасность</h2><p>Выйди из дневника на чужом или общем устройстве.</p></div><form action="/api/auth/logout" method="post"><button className="logout-button" type="submit">Выйти</button></form></div></div> : null}
     <aside className="kind-note"><Cloud size={18}/><p>Отметки сохраняются в облаке после входа и дополнительно остаются на этом устройстве для офлайн‑работы. Экспорт создаёт независимую страховочную копию.</p></aside>
   </section>;
 }
